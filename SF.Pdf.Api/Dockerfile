@@ -6,11 +6,11 @@ EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
-COPY ["SF.Pdf/SF.Pdf.Api.csproj", "SF-Pdf/"]
+COPY ["SF.Pdf.Api/SF.Pdf.Api.csproj", "SF.Pdf.Api/"]
 COPY ["SF.Pdf.Operations/SF.Pdf.Operations.csproj", "SF.Pdf.Operations/"]
-RUN dotnet restore "SF-Pdf/SF.Pdf.Api.csproj"
+RUN dotnet restore "SF.Pdf.Api/SF.Pdf.Api.csproj"
 COPY . .
-WORKDIR "/src/SF.Pdf"
+WORKDIR "/src/SF.Pdf.Api"
 RUN dotnet build "SF.Pdf.Api.csproj" -c Release -o /app/build
 
 FROM build AS publish
