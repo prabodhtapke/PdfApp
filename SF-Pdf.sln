@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30225.117
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SF.Pdf.Api", "SF-Pdf\SF.Pdf.Api.csproj", "{0F773D4D-C0B9-4E0A-B51D-D4DA14245594}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SF.Pdf.Api", "SF.Pdf.Api\SF.Pdf.Api.csproj", "{0F773D4D-C0B9-4E0A-B51D-D4DA14245594}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SF.Pdf.Operations", "SF.Pdf.Operations\SF.Pdf.Operations.csproj", "{2CAA8D4E-6219-4A66-B219-9C4395BDF9A5}"
 EndProject
