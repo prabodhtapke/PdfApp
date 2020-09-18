@@ -10,7 +10,7 @@ COPY ["SF.Pdf/SF.Pdf.Api.csproj", "SF-Pdf/"]
 COPY ["SF.Pdf.Operations/SF.Pdf.Operations.csproj", "SF.Pdf.Operations/"]
 RUN dotnet restore "SF-Pdf/SF.Pdf.Api.csproj"
 COPY . .
-WORKDIR "/src/SF-Pdf"
+WORKDIR "/src/SF.Pdf"
 RUN dotnet build "SF.Pdf.Api.csproj" -c Release -o /app/build
 
 FROM build AS publish
