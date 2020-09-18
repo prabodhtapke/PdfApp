@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "Sf.Pdf.Api": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:5453"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:8091",
+      "publishAllPorts": true
+    }
+  }
+}
