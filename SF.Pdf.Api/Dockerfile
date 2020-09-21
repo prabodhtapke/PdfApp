@@ -13,10 +13,6 @@ COPY . .
 WORKDIR "/src/SF.Pdf.Api"
 RUN dotnet build "SF.Pdf.Api.csproj" -c Release -o /app/build
 
-RUN add-apt-repository ppa:quamotion/ppa
-RUN apt-get update
-RUN apt-get install -y libgdiplus
-
 FROM build AS publish
 RUN dotnet publish "SF.Pdf.Api.csproj" -c Release -o /app/publish
 
