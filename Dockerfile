@@ -13,6 +13,8 @@ COPY . .
 WORKDIR "/src/SF.Pdf.Api"
 RUN dotnet build "SF.Pdf.Api.csproj" -c Release -o /app/build
 
+RUN apt-get install -y software-properties-common libgdiplus
+
 FROM build AS publish
 RUN dotnet publish "SF.Pdf.Api.csproj" -c Release -o /app/publish
 
