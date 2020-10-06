@@ -30,5 +30,14 @@ namespace SF.Pdf.Controllers
             _pdfOperation.DeleteFolder(deleteFolderRequest);
             return Ok();
         }
+
+        [HttpPost("ProcessPdfs/{folder}", Name = "ProcessPdfs")]
+        [ProducesResponseType(typeof(string), 200)]
+        [AllowAnonymous]
+        public IActionResult ProcessPdfs(string folder)
+        {
+            _pdfOperation.ProcessFiles(folder);
+            return Ok();
+        }
     }
 }

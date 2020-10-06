@@ -2,10 +2,13 @@
 using Docnet.Core.Models;
 using Microsoft.Extensions.Logging;
 using SerilogTimings;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Web;
 
 namespace SF.Pdf.Operations
 {
@@ -43,7 +46,7 @@ namespace SF.Pdf.Operations
                             {
                                 using (var pageReader = docReader.GetPageReader(i))
                                 {
-                                    using (var page = Operation.Begin($"Saving page {1} for {fileInfo.Name}"))
+                                    using (var page = Operation.Begin($"Saving page_{1} for {fileInfo.Name}"))
                                     {
                                         var rawBytes = pageReader.GetImage();
 
@@ -60,7 +63,6 @@ namespace SF.Pdf.Operations
 
                                         bmp.Save(stream, ImageFormat.Png);
 
-                                        _logger.LogInformation($"Saving Page_{i + 1}.jpeg");
                                         File.WriteAllBytes(Path.Combine(folder, $"Page_{i + 1}.jpeg"), stream.ToArray());
 
                                         page.Complete();
@@ -93,6 +95,30 @@ namespace SF.Pdf.Operations
 
                 Directory.Delete(deleteFolderRequest.folderName);
             }
+        }
+
+        public List<string> ProcessFiles(string folder)
+        {
+            var processedFileList = new List<string>();
+            
+            var pdfFilesInDirectory = Directory.GetFiles(HttpUtility.UrlDecode(folder), "*.pdf");
+
+            foreach (var pdfFile in pdfFilesInDirectory)
+            {
+                var result = ConvertToImage(new ConvertRequest
+                {
+                    FileId = Guid.NewGuid(),
+                    FilePath = pdfFile
+                });
+
+                if (!string.IsNullOrWhiteSpace(result))
+                {
+                    processedFileList.Add(result);
+                }
+
+            }
+
+            return processedFileList;
         }
 
         private void CreateDirectoryIfNotExist(string folderName)
