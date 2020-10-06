@@ -1,6 +1,7 @@
 ﻿using Docnet.Core;
 using Docnet.Core.Models;
-using System;
+using Microsoft.Extensions.Logging;
+using SerilogTimings;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -10,44 +11,69 @@ namespace SF.Pdf.Operations
 {
     public class PdfOperation : IPdfOperation
     {
+        private readonly ILogger<PdfOperation> _logger;
+        public PdfOperation(ILogger<PdfOperation> logger)
+        {
+            _logger = logger;
+        }
         public string ConvertToImage(ConvertRequest convertRequest)
         {
             var folder = string.Empty;
-            using (var library = DocLib.Instance)
+            using (var filePath = Operation.Begin($"Started {convertRequest.FilePath}"))
             {
-                var dimensions = new PageDimensions(720, 1280);
-
-                using (var docReader = library.GetDocReader(convertRequest.FilePath, dimensions))
+                using (var library = DocLib.Instance)
                 {
-                    var fileInfo = new FileInfo(convertRequest.FilePath);
+                    var dimensions = new PageDimensions(720, 1280);
 
-                    folder = Path.Combine(fileInfo.DirectoryName, convertRequest.FileId.ToString());
-
-                    CreateDirectoryIfNotExist(folder);
-
-                    for (int i = 0; i < docReader.GetPageCount(); i++)
+                    using (var docReader = library.GetDocReader(convertRequest.FilePath, dimensions))
                     {
-                        using (var pageReader = docReader.GetPageReader(i))
+                        var fileInfo = new FileInfo(convertRequest.FilePath);
+
+                        _logger.LogInformation($"Processing {fileInfo.Name}");
+                        folder = Path.Combine(fileInfo.DirectoryName, convertRequest.FileId.ToString());
+
+                        _logger.LogInformation($"Creating folder {folder}");
+                        CreateDirectoryIfNotExist(folder);
+
+                        var pageCount = docReader.GetPageCount();
+
+                        using (var file = Operation.Begin($"Processing {fileInfo.Name} with {pageCount} pages"))
                         {
-                            var rawBytes = pageReader.GetImage();
+                            for (int i = 0; i < docReader.GetPageCount(); i++)
+                            {
+                                using (var pageReader = docReader.GetPageReader(i))
+                                {
+                                    using (var page = Operation.Begin($"Saving page {1} for {fileInfo.Name}"))
+                                    {
+                                        var rawBytes = pageReader.GetImage();
 
-                            var width = pageReader.GetPageWidth();
-                            var height = pageReader.GetPageHeight();
+                                        var width = pageReader.GetPageWidth();
+                                        var height = pageReader.GetPageHeight();
 
-                            var characters = pageReader.GetCharacters();
+                                        var characters = pageReader.GetCharacters();
 
-                            using var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+                                        using var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
 
-                            AddBytes(bmp, rawBytes);
+                                        AddBytes(bmp, rawBytes);
 
-                            using var stream = new MemoryStream();
+                                        using var stream = new MemoryStream();
 
-                            bmp.Save(stream, ImageFormat.Png);
+                                        bmp.Save(stream, ImageFormat.Png);
 
-                            File.WriteAllBytes($"{folder}\\Page_{i + 1}.jpeg", stream.ToArray());
+                                        _logger.LogInformation($"Saving Page_{i + 1}.jpeg");
+                                        File.WriteAllBytes(Path.Combine(folder, $"Page_{i + 1}.jpeg"), stream.ToArray());
+
+                                        page.Complete();
+                                    }
+                                }
+                            }
+
+                            file.Complete();
                         }
                     }
                 }
+
+                filePath.Complete();
             }
 
             return folder;
