@@ -1,6 +1,7 @@
 ﻿using Docnet.Core;
 using Docnet.Core.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SerilogTimings;
 using System;
 using System.Collections.Generic;
@@ -15,70 +16,70 @@ namespace SF.Pdf.Operations
     public class PdfOperation : IPdfOperation
     {
         private readonly ILogger<PdfOperation> _logger;
-        public PdfOperation(ILogger<PdfOperation> logger)
+        private readonly PdfSettings _pdfSettings;
+
+        public PdfOperation(ILogger<PdfOperation> logger, IOptions<PdfSettings> pdfSettings)
         {
             _logger = logger;
+            _pdfSettings = pdfSettings.Value;
         }
         public string ConvertToImage(ConvertRequest convertRequest)
         {
-            var folder = string.Empty;
-            using (var filePath = Operation.Begin($"Started {convertRequest.FilePath}"))
+            var convertedImagesfolder = string.Empty;
+            using (var fileNameSerilogEvent = Operation.Begin($"Started {convertRequest.fileName}"))
             {
                 using (var library = DocLib.Instance)
                 {
-                    var dimensions = new PageDimensions(720, 1280);
+                    var dimensions = new PageDimensions(_pdfSettings.DimensionOne, _pdfSettings.DimensionTwo);
 
-                    using (var docReader = library.GetDocReader(convertRequest.FilePath, dimensions))
+                    var uploadedFilesPath = Path.Combine(_pdfSettings.UploadedFilePath, convertRequest.fileName);
+                    using (var docReader = library.GetDocReader(uploadedFilesPath, dimensions))
                     {
-                        var fileInfo = new FileInfo(convertRequest.FilePath);
+                        var fileInfo = new FileInfo(uploadedFilesPath);
 
                         _logger.LogInformation($"Processing {fileInfo.Name}");
-                        folder = Path.Combine(fileInfo.DirectoryName, convertRequest.FileId.ToString());
+                        convertedImagesfolder = System.Guid.NewGuid().ToString();
+                        var folderPath = Path.Combine(_pdfSettings.ConvertedImagesPath, convertedImagesfolder);
 
-                        _logger.LogInformation($"Creating folder {folder}");
-                        CreateDirectoryIfNotExist(folder);
+                        _logger.LogInformation($"Creating folder {folderPath}");
+                        CreateDirectoryIfNotExist(folderPath);
 
                         var pageCount = docReader.GetPageCount();
 
-                        using (var file = Operation.Begin($"Processing {fileInfo.Name} with {pageCount} pages"))
+                        using (var fileSerilogEvent = Operation.Begin($"Processing {fileInfo.Name} with {pageCount} pages"))
                         {
                             for (int i = 0; i < docReader.GetPageCount(); i++)
                             {
                                 using (var pageReader = docReader.GetPageReader(i))
                                 {
-                                    using (var page = Operation.Begin($"Saving page_{1} for {fileInfo.Name}"))
+                                    using (var page = Operation.Begin($"Saving page_{i + 1} for {fileInfo.Name}"))
                                     {
                                         var rawBytes = pageReader.GetImage();
-
                                         var width = pageReader.GetPageWidth();
                                         var height = pageReader.GetPageHeight();
-
                                         var characters = pageReader.GetCharacters();
 
                                         using var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-
                                         AddBytes(bmp, rawBytes);
 
                                         using var stream = new MemoryStream();
-
                                         bmp.Save(stream, ImageFormat.Png);
 
-                                        File.WriteAllBytes(Path.Combine(folder, $"Page_{i + 1}.jpeg"), stream.ToArray());
-
+                                        File.WriteAllBytes(Path.Combine(folderPath, $"{i + 1}.jpeg"), stream.ToArray());
                                         page.Complete();
                                     }
                                 }
                             }
 
-                            file.Complete();
+                            fileSerilogEvent.Complete();
                         }
                     }
                 }
 
-                filePath.Complete();
+                fileNameSerilogEvent.Complete();
             }
 
-            return folder;
+            return convertedImagesfolder;
         }
 
         public void DeleteFolder(DeleteFolderRequest deleteFolderRequest)
@@ -97,25 +98,23 @@ namespace SF.Pdf.Operations
             }
         }
 
-        public List<string> ProcessFiles(string folder)
+        public List<string> ProcessFiles()
         {
             var processedFileList = new List<string>();
-            
-            var pdfFilesInDirectory = Directory.GetFiles(HttpUtility.UrlDecode(folder), "*.pdf");
+
+            var pdfFilesInDirectory = Directory.GetFiles(HttpUtility.UrlDecode(_pdfSettings.UploadedFilePath), "*.pdf");
 
             foreach (var pdfFile in pdfFilesInDirectory)
             {
                 var result = ConvertToImage(new ConvertRequest
                 {
-                    FileId = Guid.NewGuid(),
-                    FilePath = pdfFile
+                    fileName = pdfFile
                 });
 
                 if (!string.IsNullOrWhiteSpace(result))
                 {
                     processedFileList.Add(result);
                 }
-
             }
 
             return processedFileList;

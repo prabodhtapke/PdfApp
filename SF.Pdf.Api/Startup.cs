@@ -32,6 +32,8 @@ namespace SF.Pdf
             #endregion
 
             services.AddScoped<IPdfOperation, PdfOperation>();
+
+            services.Configure<PdfSettings>(options => Configuration.GetSection("PdfSettings").Bind(options));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

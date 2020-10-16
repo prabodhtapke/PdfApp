@@ -6,6 +6,6 @@ namespace SF.Pdf.Operations
     {
         string ConvertToImage(ConvertRequest convertRequest);
         void DeleteFolder(DeleteFolderRequest deleteFolderRequest);
-        List<string> ProcessFiles(string folder);
+        List<string> ProcessFiles();
     }
 }
