@@ -31,12 +31,12 @@ namespace SF.Pdf.Controllers
             return Ok();
         }
 
-        [HttpPost("ProcessPdfs/{folder}", Name = "ProcessPdfs")]
+        [HttpPost("ProcessPdfs", Name = "ProcessPdfs")]
         [ProducesResponseType(typeof(string), 200)]
         [AllowAnonymous]
-        public IActionResult ProcessPdfs(string folder)
+        public IActionResult ProcessPdfs()
         {
-            _pdfOperation.ProcessFiles(folder);
+            _pdfOperation.ProcessFiles();
             return Ok();
         }
     }
