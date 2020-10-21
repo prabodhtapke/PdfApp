@@ -3,7 +3,6 @@ using Docnet.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SerilogTimings;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
