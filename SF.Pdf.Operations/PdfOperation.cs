@@ -3,6 +3,7 @@ using Docnet.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SerilogTimings;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -83,18 +84,23 @@ namespace SF.Pdf.Operations
 
         public void DeleteFolder(DeleteFolderRequest deleteFolderRequest)
         {
-            var directoryInfo = new DirectoryInfo(deleteFolderRequest.folderName);
+            _logger.LogInformation($"Request to delete {deleteFolderRequest.folderName} received");
 
-            if (directoryInfo.Exists)
+            if (_pdfSettings.DeleteOlderFiles)
             {
+                var directoryInfo = new DirectoryInfo(_pdfSettings.ConvertedImagesPath);
 
-                foreach (var file in directoryInfo.GetFiles())
+                foreach (var directory in directoryInfo.GetDirectories())
                 {
-                    file.Delete();
+                    _logger.LogInformation($"Checking last folder access for {directory.Name}");
+                    if (directory.LastAccessTimeUtc >= DateTime.UtcNow.AddHours(-_pdfSettings.DeleteFilesOlderThanXHours))
+                    {
+                        DeleteFiles(directory);
+                    }
                 }
-
-                Directory.Delete(deleteFolderRequest.folderName);
             }
+
+            DeleteFiles(new DirectoryInfo(Path.Combine(_pdfSettings.ConvertedImagesPath, deleteFolderRequest.folderName)));
         }
 
         public List<string> ProcessFiles()
@@ -137,6 +143,22 @@ namespace SF.Pdf.Operations
 
             Marshal.Copy(rawBytes, 0, pNative, rawBytes.Length);
             bmp.UnlockBits(bmpData);
+        }
+
+        private void DeleteFiles(DirectoryInfo directoryInfo)
+        {
+            if (directoryInfo.Exists)
+            {
+                _logger.LogInformation($"{directoryInfo.FullName} exists");
+                foreach (var file in directoryInfo.GetFiles())
+                {
+                    _logger.LogInformation($"deleting {file}");
+                    file.Delete();
+                }
+
+                _logger.LogInformation($"deleting {directoryInfo.FullName}");
+                Directory.Delete(directoryInfo.FullName);
+            }
         }
     }
 }
